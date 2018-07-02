@@ -148,8 +148,11 @@ bool FastDetector::isFeature(const dvs_msgs::Event &e)
   // Update corner location of toBeTracked 
   if (found_streak)
   {
+    // Update the active corners if necessary
+    toBeTracked->ActiveCornersUpdate(e.ts);
+    // Check if the corner is one of the corners we're tracking
     if (toBeTracked->ClassifyCorner(e.x,e.y))
-        toBeTracked->Update(e.x,e.y);
+        toBeTracked->Update(e.x,e.y,e.ts);
   }
   return found_streak;
 }

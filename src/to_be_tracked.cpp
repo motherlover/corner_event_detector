@@ -6,14 +6,15 @@ namespace corner_event_detector
 ToBeTracked::ToBeTracked(void)
 {	
 	// Distribute the n corners over an arc centered at location 
-	tracked_corners = Eigen::MatrixXd::Zero(ncorners,2); // init matrix	
+	tracked_corners = Eigen::MatrixXd::Zero(ncorners,3); // init matrix	
 	const double angular_step = 2*pi/ncorners;
 	const double angular_correction = angular_step/2;
 	for (int i=0; i<ncorners; i++) 
 	{
 		// Define corners
 		tracked_corners(i,0) = center_x + (int)cos(angular_step - angular_correction) * radius;
-		tracked_corners(i,1) = center_y + (int)sin(angular_step - angular_correction) * radius;
+		tracked_corners(i,1) = center_y + (int)sin(angular_step - angular_correction) * radius;		
+		tracked_corners(i,2) = init_ts;
 		// Define offset from center per corner
 		corner_offset[i] = radius;
 	}
@@ -65,7 +66,7 @@ bool ToBeTracked::ClassifyCorner(int x, int y)
 	return in_window;
 }
 
-void ToBeTracked::Update(int x, int y)
+void ToBeTracked::Update(int x, int y, double t)
 {	
 	// Find smallest distance to a corner
 	int d_min = 2*window_size; // Initialize for loop
@@ -86,10 +87,13 @@ void ToBeTracked::Update(int x, int y)
 	object_center[0] = (int) (object_center[0]*ncorners-tracked_corners(i_match,0)+x)/ncorners;
 	object_center[1] = (int) (object_center[1]*ncorners-tracked_corners(i_match,1)+x)/ncorners;	
 	// Update offsets
+	int sum_offset = 0;
 	for (int i=0; i<ncorners; i++)
 	{
-		corner_offset[i] = (int) sqrt ((object_center[0] - tracked_corners(i,0))*(object_center[0] - tracked_corners(i,0)) \
-		 + (object_center[1] - tracked_corners(i,1))*(object_center[1] - tracked_corners(i,1)));		
+		new_corner_offset = (int) sqrt ((object_center[0] - tracked_corners(i,0))*(object_center[0] - tracked_corners(i,0)) \
+		 + (object_center[1] - tracked_corners(i,1))*(object_center[1] - tracked_corners(i,1)));	
+		corner_offset[i] = new_corner_offset;
+		sum_offset += new_corner_offset; 	
 	}
 
 	// Update the location of the matched corner
@@ -97,7 +101,36 @@ void ToBeTracked::Update(int x, int y)
 	int new_y = (y + tracked_corners(i_match,1))/2;
 	tracked_corners(i_match,0) = new_x;
 	tracked_corners(i_match,1) = new_y;
+	tracked_corners(i_match,2) = t;
+	// Update mean offset
+	mean_offset = (int) sum_offset/ncorners;
 
+}
+
+void ToBeTracked::ActiveCornersUpdate(double t)
+{
+	for (int i=0; i<ncorners; i++)
+	{
+		// Check if still active
+		if (t - tracked_corners(i,2) > dt_max)
+		{
+			// If not then update
+			UpdateInactiveCorner(i,t)
+		}
+	}
 } 
+
+void ToBeTracked::UpdateInactiveCorner(int i, double t)
+{
+	// Place corner at average offset at random angle
+	angle = ((double) rand() / (RAND_MAX)) * 2 * pi;
+	x_reinit = (int) cos(angle) * mean_offset;
+	y_reinit = (int) sin(angle) * mean_offset;
+	tracked_corners(i,0) = x_reinit;
+	tracked_corners(i,1) = y_reinit;
+	tracked_corners(i,2) = t;
+} 
+
+
 
 }// namespace

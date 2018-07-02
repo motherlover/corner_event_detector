@@ -15,7 +15,9 @@ public:
   virtual ~ToBeTracked(void);
   bool ClassifyEvent(int x, int y);
   bool ClassifyCorner(int x, int y);
-  void Update(int x, int y);
+  void Update(int x, int y, int t);
+  void ToBeTracked::ActiveCornersUpdate(double t);
+  void ToBeTracked::UpdateInactiveCorner(int i, double t);
 
 private:
   Eigen::MatrixXd tracked_corners;
@@ -28,6 +30,9 @@ private:
   static constexpr double pi = 3.1415;
   int corner_offset[ncorners];
   int object_center[2];
+  static const double dt_max = 0.1;
+  static const double init_ts = 0; // Some small number
+  int mean_offset;
 };
 
 } // namespace
