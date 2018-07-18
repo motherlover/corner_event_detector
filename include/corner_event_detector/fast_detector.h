@@ -34,6 +34,9 @@ private:
   static const int sensor_height_ = 180;
 
   ToBeTracked* toBeTracked;
+  double last_update_time;  
+  static constexpr double dt_max = 4;
+  bool first_event;
 
 };
 

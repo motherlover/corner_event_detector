@@ -13,8 +13,7 @@ ToBeTracked::ToBeTracked(void)
 	{
 		// Define corners
 		tracked_corners(i,0) = center_x + (int)cos(angular_step - angular_correction) * radius;
-		tracked_corners(i,1) = center_y + (int)sin(angular_step - angular_correction) * radius;		
-		tracked_corners(i,2) = init_ts;
+		tracked_corners(i,1) = center_y + (int)sin(angular_step - angular_correction) * radius;	
 		// Define offset from center per corner
 		corner_offset[i] = radius;
 	}
@@ -85,12 +84,12 @@ void ToBeTracked::Update(int x, int y, double t)
 	}
 	// Update center
 	object_center[0] = (int) (object_center[0]*ncorners-tracked_corners(i_match,0)+x)/ncorners;
-	object_center[1] = (int) (object_center[1]*ncorners-tracked_corners(i_match,1)+x)/ncorners;	
+	object_center[1] = (int) (object_center[1]*ncorners-tracked_corners(i_match,1)+y)/ncorners;	
 	// Update offsets
 	int sum_offset = 0;
 	for (int i=0; i<ncorners; i++)
 	{
-		new_corner_offset = (int) sqrt ((object_center[0] - tracked_corners(i,0))*(object_center[0] - tracked_corners(i,0)) \
+		int new_corner_offset = (int) sqrt ((object_center[0] - tracked_corners(i,0))*(object_center[0] - tracked_corners(i,0)) \
 		 + (object_center[1] - tracked_corners(i,1))*(object_center[1] - tracked_corners(i,1)));	
 		corner_offset[i] = new_corner_offset;
 		sum_offset += new_corner_offset; 	
@@ -115,7 +114,7 @@ void ToBeTracked::ActiveCornersUpdate(double t)
 		if (t - tracked_corners(i,2) > dt_max)
 		{
 			// If not then update
-			UpdateInactiveCorner(i,t)
+			UpdateInactiveCorner(i,t);
 		}
 	}
 } 
@@ -123,14 +122,22 @@ void ToBeTracked::ActiveCornersUpdate(double t)
 void ToBeTracked::UpdateInactiveCorner(int i, double t)
 {
 	// Place corner at average offset at random angle
-	angle = ((double) rand() / (RAND_MAX)) * 2 * pi;
-	x_reinit = (int) cos(angle) * mean_offset;
-	y_reinit = (int) sin(angle) * mean_offset;
+	// Show that a corner is being updated based on dt
+	std::cout << "Acitvity function used \n";
+	double angle = ((double) rand() / (RAND_MAX)) * 2 * pi;	
+	double x_reinit = (int) ((cos(angle) * mean_offset) + object_center[0]);
+	double y_reinit = (int) ((sin(angle) * mean_offset) + object_center[1]);
 	tracked_corners(i,0) = x_reinit;
 	tracked_corners(i,1) = y_reinit;
-	tracked_corners(i,2) = t;
+	tracked_corners(i,2) = t;	
 } 
 
-
+void ToBeTracked::SetInitialTime(double t)
+{
+	for (int i=0; i<ncorners; i++) 
+	{			
+		tracked_corners(i,2) = t;		
+	}
+}
 
 }// namespace

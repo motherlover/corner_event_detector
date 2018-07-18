@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <math.h>
 #include <algorithm>
+#include <iostream>
 
 namespace corner_event_detector
 {
@@ -15,9 +16,10 @@ public:
   virtual ~ToBeTracked(void);
   bool ClassifyEvent(int x, int y);
   bool ClassifyCorner(int x, int y);
-  void Update(int x, int y, int t);
-  void ToBeTracked::ActiveCornersUpdate(double t);
-  void ToBeTracked::UpdateInactiveCorner(int i, double t);
+  void Update(int x, int y, double t);
+  void ActiveCornersUpdate(double t);
+  void UpdateInactiveCorner(int i, double t);
+  void SetInitialTime(double t);
 
 private:
   Eigen::MatrixXd tracked_corners;
@@ -30,8 +32,7 @@ private:
   static constexpr double pi = 3.1415;
   int corner_offset[ncorners];
   int object_center[2];
-  static const double dt_max = 0.1;
-  static const double init_ts = 0; // Some small number
+  static constexpr double dt_max = 4;
   int mean_offset;
 };
 

@@ -22,7 +22,9 @@ FastDetector::FastDetector(bool connect)
   sae_[0] = Eigen::MatrixXd::Zero(sensor_height_, sensor_width_);
   sae_[1] = Eigen::MatrixXd::Zero(sensor_height_, sensor_width_);
 
-  toBeTracked = new ToBeTracked();
+  toBeTracked = new ToBeTracked();  
+  std::cout.precision(15);
+  first_event = true;
 }
 
 FastDetector::~FastDetector()
@@ -44,7 +46,23 @@ bool FastDetector::isFeature(const dvs_msgs::Event &e)
   {
     return false;
   }
-
+  // Get first timestamp
+  if (first_event)
+  {
+    last_update_time = e.ts.toSec();
+    first_event = false;
+    // Set first timestamp 
+    toBeTracked->SetInitialTime(last_update_time);
+  }
+  
+  // Check if update time has elapsed
+  if (e.ts.toSec() - last_update_time > dt_max)
+  {
+    // Update the active corners if necessary    
+    toBeTracked->ActiveCornersUpdate(e.ts.toSec());
+    last_update_time = e.ts.toSec();
+  }
+    
   // Check if event in one of the search windows
   if (toBeTracked->ClassifyEvent(e.x,e.y) == false)
   {
@@ -147,12 +165,13 @@ bool FastDetector::isFeature(const dvs_msgs::Event &e)
 
   // Update corner location of toBeTracked 
   if (found_streak)
-  {
-    // Update the active corners if necessary
-    toBeTracked->ActiveCornersUpdate(e.ts);
+  {    
     // Check if the corner is one of the corners we're tracking
     if (toBeTracked->ClassifyCorner(e.x,e.y))
-        toBeTracked->Update(e.x,e.y,e.ts);
+    {
+      // Update corner
+      toBeTracked->Update(e.x,e.y,e.ts.toSec());
+    }
   }
   return found_streak;
 }
